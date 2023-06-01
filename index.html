@@ -29,10 +29,15 @@
 
 			import * as THREE from 'three';
 			import { ARButton } from 'three/addons/webxr/ARButton.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 			let container;
 			let camera, scene, renderer;
 			let controller;
+			let gltfLoader;
+			let controls;
+
 
 			let reticle;
 
@@ -68,22 +73,50 @@
 				document.body.appendChild( ARButton.createButton( renderer, { requiredFeatures: [ 'hit-test' ] } ) );
 
 				//
+				controls = new OrbitControls(camera, renderer.domElement);
+				controls.target.set(0, 0, 0); // Set the target of the controls (optional)
 
-				const geometry = new THREE.CylinderGeometry( 0.1, 0.1, 0.2, 32 ).translate( 0, 0.1, 0 );
+				gltfLoader = new GLTFLoader();
+				//const geometry = new THREE.CylinderGeometry( 0.1, 0.1, 0.2, 32 ).translate( 0, 0.1, 0 );
+				
+				function loadModel() {
+				if (reticle.visible) {
+					gltfLoader.load(
+					'static/Cricket_2.glb',
+					function (gltf) {
+						const model = gltf.scene;
+						//const yOffset = 0.01;
+						model.position.copy(reticle.position);
+					//	model.position.y -= yOffset;
+						model.quaternion.copy(reticle.quaternion);
+						model.scale.set(0.3, 0.3, 0.3); // Adjust the scale if necessary
+						scene.add(model);
+					},
+					undefined,
+					function (error) {
+						console.error('Error loading model:', error);
+					}
+					);
+				}
+				}
+
+
 
 				function onSelect() {
 
 					if ( reticle.visible ) {
 
-						const material = new THREE.MeshPhongMaterial( { color: 0xffffff * Math.random() } );
-						const mesh = new THREE.Mesh( geometry, material );
-						reticle.matrix.decompose( mesh.position, mesh.quaternion, mesh.scale );
-						mesh.scale.y = Math.random() * 2 + 1;
-						scene.add( mesh );
+						// const material = new THREE.MeshPhongMaterial( { color: 0xffffff * Math.random() } );
+						// const mesh = new THREE.Mesh( geometry, material );
+						// reticle.matrix.decompose( mesh.position, mesh.quaternion, mesh.scale );
+						// mesh.scale.y = Math.random() * 2 + 1;
+						// scene.add( mesh );
+						loadModel();
 
 					}
 
 				}
+
 
 				controller = renderer.xr.getController( 0 );
 				controller.addEventListener( 'select', onSelect );
@@ -109,6 +142,7 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				controls.update();
 
 			}
 
@@ -117,6 +151,7 @@
 			function animate() {
 
 				renderer.setAnimationLoop( render );
+				controls.update();
 
 			}
 
